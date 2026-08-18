@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: skill_craft_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:skill_craft}
+    ports:
+      - "5432:5432"
+    volumes:
+#      - ./src/main/resources/db/migration/V1_init.sql:/docker-entrypoint-initdb.d/V1__init.sql
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skill-net
+
+  skill_craft_backend:
+    build:
+      context: ./danceschool
+      dockerfile: Dockerfile
+    container_name: skill_craft_backend
+    environment:
+      SPRING_DATASOURCE_URL: ${POSTGRES_URL:jdbc:postgresql://postgres:5432/skill_craft}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - skill-net
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  db_data:

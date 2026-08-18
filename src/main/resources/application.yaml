@@ -1,3 +1,71 @@
 spring:
   application:
     name: skill-craft
+  main:
+    allow-bean-definition-overriding:
+      true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  web:
+    resources:
+      cache:
+        period: 1s
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        use_query_cache property: false
+        temp:
+          use_jdbc_metadata_defaults: false
+  flyway:
+    baseline-on-migrate: true
+    schemas: public
+    enabled: true
+    validate-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://postgres:5432/skill_craft}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+logging:
+  file:
+    name: /var/log/accounts.log
+  level:
+    root: warn
+    org.springframework: warn
+    org.thymeleaf.standard.processor: error
+    com.vpn_node: trace
+    org:
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: ERROR
+  pattern:
+    console: "%-4r %d{yyyy-MM-dd HH:mm:ss} [%t] %-5p %c.%M -> %m%n"
+    file: "%-4r %d{yyyy-MM-dd HH:mm:ss} [%t] %-5p %c.%M -> %m%n"
+server:
+  tomcat:
+    max-connections: ${max_connections:10}
+    processor-cache: ${processor_cache:10}
+    accept-count: ${accept_count:5}
+    threads:
+      max: ${max_threads:5}
+    keep-alive-timeout: ${keep_alive_timeout:5s}
+    connection-timeout: ${connection_timeout:5s}
+    max-keep-alive-requests: ${max_keep_alive_requests:10}
+  servlet:
+    context-path: "/"
+  forward-headers-strategy: FRAMEWORK
+  port: ${APP_PORT:8080}
+
+  jwt:
+    secret: ${JWT_SECRET:secret_craft}
+    expiration-ms: 86400000
