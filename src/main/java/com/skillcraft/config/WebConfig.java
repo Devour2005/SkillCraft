@@ -20,8 +20,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(@NonNull ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("dance_school_menu");
-        registry.addViewController("/dance_school").setViewName("dance_school_menu");
+        registry.addViewController("/").setViewName("skill_craft_menu");
+        registry.addViewController("/skill_craft").setViewName("skill_craft_menu");
     }
 
     @Override
