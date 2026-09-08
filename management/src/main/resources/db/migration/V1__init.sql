@@ -130,6 +130,9 @@ CREATE TABLE payments
         REFERENCES users (id) ON DELETE RESTRICT
 );
 
+ALTER TABLE payments
+    ADD CONSTRAINT chk_payments_amount_positive CHECK (amount > 0);
+
 
 CREATE INDEX idx_users_role ON users (role);
 CREATE INDEX idx_users_email ON users (email);
