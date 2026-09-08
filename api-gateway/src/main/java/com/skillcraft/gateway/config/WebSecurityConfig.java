@@ -1,5 +1,7 @@
 package com.skillcraft.gateway.config;
 
+import com.skillcraft.gateway.security.AdminPanelAuthenticationSuccessHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,7 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @Order(2)
+@RequiredArgsConstructor
 public class WebSecurityConfig {
+
+	private final AdminPanelAuthenticationSuccessHandler adminPanelAuthenticationSuccessHandler;
 
 	@Bean
 	public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
@@ -24,7 +29,7 @@ public class WebSecurityConfig {
 						.anyRequest().authenticated())
 				.formLogin(form -> form
 						.loginPage("/login")
-						.defaultSuccessUrl("/admin", true)
+						.successHandler(adminPanelAuthenticationSuccessHandler)
 						.failureUrl("/login?error")
 						.permitAll())
 				.logout(logout -> logout

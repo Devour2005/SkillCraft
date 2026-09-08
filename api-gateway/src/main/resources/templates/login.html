@@ -10,6 +10,7 @@
 	<h1>SkillCraft</h1>
 
 	<p class="alert error" th:if="${param.error}">Invalid email or password</p>
+	<p class="alert error" th:if="${param.denied}">This account does not have access to the admin panel. Only admins and managers can sign in here.</p>
 	<p class="alert success" th:if="${param.logout}">You have been signed out</p>
 	<p class="alert success" th:if="${registered}">Registration successful, please sign in</p>
 
