@@ -84,6 +84,32 @@ public class AdminController {
 		return "redirect:/admin/" + returnTab;
 	}
 
+	@PostMapping("/admin/users/{id}/deactivate")
+	public String deactivateUser(@PathVariable Long id,
+			@RequestParam String returnTab,
+			Authentication authentication,
+			RedirectAttributes redirectAttributes) {
+		try {
+			managementApiClient.deactivateUser(authentication, id);
+		} catch (RestClientResponseException ex) {
+			redirectAttributes.addFlashAttribute("error", ex.getResponseBodyAsString());
+		}
+		return "redirect:/admin/" + returnTab;
+	}
+
+	@PostMapping("/admin/users/{id}/delete")
+	public String deleteUser(@PathVariable Long id,
+			@RequestParam String returnTab,
+			Authentication authentication,
+			RedirectAttributes redirectAttributes) {
+		try {
+			managementApiClient.deleteUser(authentication, id);
+		} catch (RestClientResponseException ex) {
+			redirectAttributes.addFlashAttribute("error", ex.getResponseBodyAsString());
+		}
+		return "redirect:/admin/" + returnTab;
+	}
+
 	@GetMapping("/admin/courses/{id}/edit")
 	public String editCourseForm(@PathVariable Long id, Model model, Authentication authentication) {
 		model.addAttribute("editCourse", managementApiClient.getCourse(authentication, id));

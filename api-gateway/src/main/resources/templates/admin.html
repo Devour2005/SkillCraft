@@ -37,7 +37,20 @@
 				<td th:text="${u.phone ?: '—'}"></td>
 				<td th:text="${u.role}"></td>
 				<td th:text="${u.isActive} ? 'yes' : 'no'"></td>
-				<td><a class="btn" th:href="@{/admin/users/{id}/edit(id=${u.id})}">Edit</a></td>
+				<td class="row-actions">
+					<a class="btn" th:href="@{/admin/users/{id}/edit(id=${u.id})}">Edit</a>
+
+					<form th:if="${u.isActive}" th:action="@{/admin/users/{id}/deactivate(id=${u.id})}" method="post">
+						<input type="hidden" name="returnTab" th:value="${tab}">
+						<button type="submit" class="btn-secondary">Deactivate</button>
+					</form>
+
+					<form th:if="${u.role.name() != 'MANAGER'}" th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post"
+							onsubmit="return confirm('Delete this user? This cannot be undone.')">
+						<input type="hidden" name="returnTab" th:value="${tab}">
+						<button type="submit" class="btn-danger">Delete</button>
+					</form>
+				</td>
 			</tr>
 			<tr th:if="${#lists.isEmpty(users)}">
 				<td colspan="6" class="muted">No records</td>

@@ -98,4 +98,28 @@ public class UserServiceImpl implements UserService {
 
 		return userMapper.toDto(user);
 	}
+
+	@Override
+	@Transactional
+	public UserDto deactivateUser(Long id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException(String.format("User with id = %s not found ", id)));
+
+		user.setIsActive(false);
+
+		return userMapper.toDto(user);
+	}
+
+	@Override
+	@Transactional
+	public void deleteUser(Long id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException(String.format("User with id = %s not found ", id)));
+
+		if (user.getRole() == UserRole.MANAGER) {
+			throw new IllegalArgumentException("Deleting a user with the MANAGER role is not allowed");
+		}
+
+		userRepository.delete(user);
+	}
 }

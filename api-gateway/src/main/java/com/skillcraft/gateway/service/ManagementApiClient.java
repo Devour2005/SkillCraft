@@ -55,6 +55,22 @@ public class ManagementApiClient {
 				.body(AdminUserView.class);
 	}
 
+	public void deactivateUser(Authentication authentication, Long id) {
+		managementRestClient.post()
+				.uri("/api/users/{id}/deactivate", id)
+				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
+				.retrieve()
+				.toBodilessEntity();
+	}
+
+	public void deleteUser(Authentication authentication, Long id) {
+		managementRestClient.delete()
+				.uri("/api/users/{id}", id)
+				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
+				.retrieve()
+				.toBodilessEntity();
+	}
+
 	public List<AdminCourseView> getAllCourses(Authentication authentication) {
 		return managementRestClient.get()
 				.uri("/api/courses/all")

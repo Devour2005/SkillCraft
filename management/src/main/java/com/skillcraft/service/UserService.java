@@ -13,4 +13,6 @@ public interface UserService {
 	UserDto getUserById(Long id);
 	List<UserDto> getUsersByRoles(Collection<UserRole> roles);
 	UserDto updateUser(Long id, UpdateUserRequest request);
+	UserDto deactivateUser(Long id);
+	void deleteUser(Long id);
 }

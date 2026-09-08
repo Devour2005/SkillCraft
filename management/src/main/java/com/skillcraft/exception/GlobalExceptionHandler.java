@@ -2,6 +2,7 @@ package com.skillcraft.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +25,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(SecurityException.class)
 	public ResponseEntity<ApiError> handleForbidden(SecurityException ex) {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiError(ex.getMessage()));
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(new ApiError("Cannot complete this action: the record is still referenced by other data (e.g. courses, payments or enrollments)"));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
