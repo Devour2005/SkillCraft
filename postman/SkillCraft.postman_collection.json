@@ -1,0 +1,582 @@
+{
+	"info": {
+		"name": "SkillCraft",
+		"description": "End-to-end scenarios against api-gateway (http://localhost:8081), which proxies business calls to management. Run folders top-to-bottom with the Collection Runner - each request saves what the next one needs into collection variables (tokens, ids). The only manual step is promoting the bootstrap account to ADMIN in folder 2 (there is no self-service way to become admin, by design).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:8081" },
+		{ "key": "studentEmail", "value": "" },
+		{ "key": "studentUserId", "value": "" },
+		{ "key": "studentToken", "value": "" },
+		{ "key": "adminEmail", "value": "" },
+		{ "key": "adminUserId", "value": "" },
+		{ "key": "adminToken", "value": "" },
+		{ "key": "teacherId", "value": "" },
+		{ "key": "managerId", "value": "" },
+		{ "key": "accountantId", "value": "" },
+		{ "key": "accountantEmail", "value": "" },
+		{ "key": "accountantToken", "value": "" },
+		{ "key": "courseId", "value": "" },
+		{ "key": "notificationsUrl", "value": "http://localhost:8084" },
+		{ "key": "billingUrl", "value": "http://localhost:8085" }
+	],
+	"item": [
+		{
+			"name": "01 - Student self-service",
+			"item": [
+				{
+					"name": "Register student",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"student.{{$timestamp}}@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Dana\",\n  \"lastName\": \"White\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"const body = pm.response.json();",
+									"pm.collectionVariables.set('studentEmail', body.email);",
+									"pm.collectionVariables.set('studentUserId', body.userId);",
+									"pm.collectionVariables.set('studentToken', body.accessToken);",
+									"pm.test('Role is STUDENT', () => pm.expect(body.role).to.eql('STUDENT'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login student",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', () => pm.response.to.have.status(200));",
+									"pm.collectionVariables.set('studentToken', pm.response.json().accessToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Browse active courses (allowed for any role)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+						"url": { "raw": "{{baseUrl}}/api/courses", "host": ["{{baseUrl}}"], "path": ["api", "courses"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+						}
+					]
+				},
+				{
+					"name": "Try to list users (expect 403 - students are not staff)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?role=STUDENT",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"],
+							"query": [{ "key": "role", "value": "STUDENT" }]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": { "type": "text/javascript", "exec": ["pm.test('Status is 403', () => pm.response.to.have.status(403));"] }
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "02 - Admin bootstrap (needs one manual DB step)",
+			"description": "Public registration only ever creates STUDENT accounts. To get the first ADMIN, register normally here, then run the SQL below against the skill_craft DB before the 'Login as admin' request:\n\ndocker compose exec postgres psql -U <POSTGRES_USER> -d skill_craft -c \"UPDATE users SET role='ADMIN' WHERE id={{adminUserId}};\"\n\n(replace <POSTGRES_USER> with the value from your .env). See postman/curl-examples.md for the ready-to-paste version.",
+			"item": [
+				{
+					"name": "Register bootstrap account",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin.{{$timestamp}}@example.com\",\n  \"password\": \"admin12345\",\n  \"firstName\": \"Site\",\n  \"lastName\": \"Admin\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"const body = pm.response.json();",
+									"pm.collectionVariables.set('adminEmail', body.email);",
+									"pm.collectionVariables.set('adminUserId', body.userId);",
+									"console.log('Now promote this user to ADMIN in the DB, see the folder description, then run the next request.');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login as admin (run AFTER the manual SQL promotion)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"admin12345\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', () => pm.response.to.have.status(200));",
+									"const body = pm.response.json();",
+									"pm.collectionVariables.set('adminToken', body.accessToken);",
+									"pm.test('Role is ADMIN (fails until you run the SQL promotion)', () => pm.expect(body.role).to.eql('ADMIN'));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "03 - Admin creates staff",
+			"item": [
+				{
+					"name": "Create teacher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"teacher.{{$timestamp}}@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Tom\",\n  \"lastName\": \"Reed\",\n  \"role\": \"TEACHER\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('teacherId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create manager",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager.{{$timestamp}}@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Maria\",\n  \"lastName\": \"Lopez\",\n  \"role\": \"MANAGER\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('managerId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create accountant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"accountant.{{$timestamp}}@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Olga\",\n  \"lastName\": \"Popova\",\n  \"role\": \"ACCOUNTANT\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"const body = pm.response.json();",
+									"pm.collectionVariables.set('accountantId', body.id);",
+									"pm.collectionVariables.set('accountantEmail', body.email);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List teachers",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?role=TEACHER",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"],
+							"query": [{ "key": "role", "value": "TEACHER" }]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				},
+				{
+					"name": "List other staff (manager + accountant + admin)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?role=MANAGER&role=ACCOUNTANT&role=ADMIN",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"],
+							"query": [
+								{ "key": "role", "value": "MANAGER" },
+								{ "key": "role", "value": "ACCOUNTANT" },
+								{ "key": "role", "value": "ADMIN" }
+							]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				},
+				{
+					"name": "Update teacher (add phone)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Tom\",\n  \"lastName\": \"Reed\",\n  \"phone\": \"+1-555-0100\",\n  \"isActive\": true\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/users/{{teacherId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{teacherId}}"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				}
+			]
+		},
+		{
+			"name": "04 - Courses",
+			"item": [
+				{
+					"name": "Create course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Algebra 101\",\n  \"description\": \"Intro to algebra\",\n  \"teacherId\": {{teacherId}},\n  \"price\": 150.00\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/courses", "host": ["{{baseUrl}}"], "path": ["api", "courses"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('courseId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List active courses (paged, any authenticated role)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/courses?page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "courses"],
+							"query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				},
+				{
+					"name": "List all courses (admin, includes archived)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": { "raw": "{{baseUrl}}/api/courses/all", "host": ["{{baseUrl}}"], "path": ["api", "courses", "all"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				},
+				{
+					"name": "Get course by id",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": { "raw": "{{baseUrl}}/api/courses/{{courseId}}", "host": ["{{baseUrl}}"], "path": ["api", "courses", "{{courseId}}"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				},
+				{
+					"name": "Update course (price + description)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Algebra 101\",\n  \"description\": \"Updated syllabus\",\n  \"teacherId\": {{teacherId}},\n  \"price\": 175.00,\n  \"isArchived\": false\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/courses/{{courseId}}", "host": ["{{baseUrl}}"], "path": ["api", "courses", "{{courseId}}"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+					]
+				}
+			]
+		},
+		{
+			"name": "05 - Enrollment",
+			"item": [
+				{
+					"name": "Enroll student in course",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/enrollments?studentUserId={{studentUserId}}&courseId={{courseId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "enrollments"],
+							"query": [
+								{ "key": "studentUserId", "value": "{{studentUserId}}" },
+								{ "key": "courseId", "value": "{{courseId}}" }
+							]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 201', () => pm.response.to.have.status(201));"] } }
+					]
+				},
+				{
+					"name": "Get student's enrollments",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/enrollments/student/{{studentUserId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "enrollments", "student", "{{studentUserId}}"]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));", "pm.test('Contains at least one enrollment', () => pm.expect(pm.response.json().length).to.be.above(0));"] } }
+					]
+				},
+				{
+					"name": "Enroll again (expect 400 - already enrolled)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/enrollments?studentUserId={{studentUserId}}&courseId={{courseId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "enrollments"],
+							"query": [
+								{ "key": "studentUserId", "value": "{{studentUserId}}" },
+								{ "key": "courseId", "value": "{{courseId}}" }
+							]
+						}
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"] } }
+					]
+				}
+			]
+		},
+		{
+			"name": "06 - Payments",
+			"item": [
+				{
+					"name": "Login as accountant",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{accountantEmail}}\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', () => pm.response.to.have.status(200));",
+									"pm.collectionVariables.set('accountantToken', pm.response.json().accessToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Process tuition payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accountantToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"targetUserId\": {{studentUserId}},\n  \"amount\": 150.00,\n  \"type\": \"STUDENT_TUITION\",\n  \"comment\": \"Tuition for Algebra 101\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 201', () => pm.response.to.have.status(201));"] } }
+					]
+				},
+				{
+					"name": "Try to pay as admin (expect 403 - only accountants can)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"targetUserId\": {{studentUserId}},\n  \"amount\": 50.00,\n  \"type\": \"BONUS\",\n  \"comment\": \"Should be rejected\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+					},
+					"event": [
+						{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 403', () => pm.response.to.have.status(403));"] } }
+					]
+				}
+			]
+			},
+			{
+				"name": "07 - Event-driven services (Kafka)",
+				"description": "management/api-gateway publish events; notification-service (8084) and billing-service (8085) consume them asynchronously and are not routed through the gateway. Wait a couple seconds after 05/06 before checking these, since consumption isn't part of the request/response cycle.",
+				"item": [
+					{
+						"name": "Notifications for the student (welcome + enrollment + payment)",
+						"request": {
+							"method": "GET",
+							"url": {
+								"raw": "{{notificationsUrl}}/notifications/user/{{studentUserId}}",
+								"host": ["{{notificationsUrl}}"],
+								"path": ["notifications", "user", "{{studentUserId}}"]
+							}
+						},
+						"event": [
+							{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+						]
+					},
+					{
+						"name": "All notifications (debug)",
+						"request": {
+							"method": "GET",
+							"url": { "raw": "{{notificationsUrl}}/notifications", "host": ["{{notificationsUrl}}"], "path": ["notifications"] }
+						},
+						"event": [
+							{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+						]
+					},
+					{
+						"name": "Invoice for the student (PENDING after enrollment, PAID after payment)",
+						"request": {
+							"method": "GET",
+							"url": {
+								"raw": "{{billingUrl}}/invoices/student/{{studentUserId}}",
+								"host": ["{{billingUrl}}"],
+								"path": ["invoices", "student", "{{studentUserId}}"]
+							}
+						},
+						"event": [
+							{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+						]
+					},
+					{
+						"name": "All invoices (debug)",
+						"request": {
+							"method": "GET",
+							"url": { "raw": "{{billingUrl}}/invoices", "host": ["{{billingUrl}}"], "path": ["invoices"] }
+						},
+						"event": [
+							{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] } }
+						]
+					}
+				]
+		}
+	]
+}
