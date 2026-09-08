@@ -5,11 +5,10 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:skill_craft}
+      POSTGRES_DB: ${POSTGRES_DB:-skill_craft}
     ports:
       - "5432:5432"
     volumes:
-#      - ./src/main/resources/db/migration/V1_init.sql:/docker-entrypoint-initdb.d/V1__init.sql
       - db_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
@@ -19,17 +18,18 @@ services:
     networks:
       - skill-net
 
-  skill_craft_backend:
+  management:
     build:
-      context: ./danceschool
-      dockerfile: Dockerfile
-    container_name: skill_craft_backend
+      context: .
+      dockerfile: management/Dockerfile
+    container_name: skill_craft_management
     environment:
-      SPRING_DATASOURCE_URL: ${POSTGRES_URL:jdbc:postgresql://postgres:5432/skill_craft}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      SPRING_FLYWAY_ENABLED: "true"
+      POSTGRES_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/skill_craft}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_PORT: 8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,8 +37,32 @@ services:
       - "8080:8080"
     networks:
       - skill-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: skill_craft_gateway
+    environment:
+      POSTGRES_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/skill_craft}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MANAGEMENT_BASE_URL: http://management:8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      management:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    networks:
+      - skill-net
+
 networks:
-  app-net:
+  skill-net:
     driver: bridge
 
 volumes:
