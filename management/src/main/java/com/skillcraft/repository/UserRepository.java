@@ -1,6 +1,9 @@
 package com.skillcraft.repository;
 
 import com.skillcraft.domain.User;
+import com.skillcraft.domain.UserRole;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -11,5 +14,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	Optional<User> findByEmailIgnoreCase(String email);
 
 	boolean existsByEmailIgnoreCase(String email);
+
+	List<User> findAllByRoleInOrderByLastNameAscFirstNameAsc(Collection<UserRole> roles);
 
 }

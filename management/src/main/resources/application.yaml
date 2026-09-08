@@ -1,24 +1,19 @@
 spring:
   application:
-    name: skill-craft
+    name: management
   main:
-    allow-bean-definition-overriding:
-      true
+    allow-bean-definition-overriding: true
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-  web:
-    resources:
-      cache:
-        period: 1s
   jpa:
     database: POSTGRESQL
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        use_query_cache property: false
         temp:
           use_jdbc_metadata_defaults: false
   flyway:
@@ -33,39 +28,37 @@ spring:
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+jwt:
+  secret: ${JWT_SECRET}
+
 logging:
   file:
-    name: /var/log/accounts.log
+    name: ${LOG_FILE:logs/management.log}
   level:
     root: warn
     org.springframework: warn
-    org.thymeleaf.standard.processor: error
-    com.vpn_node: trace
-    org:
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: ERROR
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
   pattern:
     console: "%-4r %d{yyyy-MM-dd HH:mm:ss} [%t] %-5p %c.%M -> %m%n"
     file: "%-4r %d{yyyy-MM-dd HH:mm:ss} [%t] %-5p %c.%M -> %m%n"
+
 server:
   tomcat:
-    max-connections: ${max_connections:10}
-    processor-cache: ${processor_cache:10}
-    accept-count: ${accept_count:5}
+    max-connections: ${MAX_CONNECTIONS:10}
+    accept-count: ${ACCEPT_COUNT:5}
     threads:
-      max: ${max_threads:5}
-    keep-alive-timeout: ${keep_alive_timeout:5s}
-    connection-timeout: ${connection_timeout:5s}
-    max-keep-alive-requests: ${max_keep_alive_requests:10}
+      max: ${MAX_THREADS:5}
+    keep-alive-timeout: ${KEEP_ALIVE_TIMEOUT:5s}
+    connection-timeout: ${CONNECTION_TIMEOUT:5s}
+    max-keep-alive-requests: ${MAX_KEEP_ALIVE_REQUESTS:10}
   servlet:
     context-path: "/"
   forward-headers-strategy: FRAMEWORK
   port: ${APP_PORT:8080}
-
-  jwt:
-    secret: ${JWT_SECRET:secret_craft}
-    expiration-ms: 86400000

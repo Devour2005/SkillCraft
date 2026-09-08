@@ -1,6 +1,6 @@
 package com.skillcraft.domain.dto;
 
-import com.skillcraft.domain.User.UserRole;
+import com.skillcraft.domain.UserRole;
 import java.time.Instant;
 
 public record UserDto(

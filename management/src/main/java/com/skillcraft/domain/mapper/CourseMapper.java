@@ -17,7 +17,7 @@ public interface CourseMapper {
 	CourseDto toDto(Course entity);
 
 	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "teacher", ignore = true) // Учитель устанавливается отдельно в Service по teacherId
+	@Mapping(target = "teacher", ignore = true) 
 	@Mapping(target = "isArchived", constant = "false")
 	Course toEntity(CreateCourseRequest request);
 

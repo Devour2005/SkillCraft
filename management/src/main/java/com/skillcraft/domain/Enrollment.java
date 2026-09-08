@@ -18,6 +18,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
@@ -51,6 +53,7 @@ public class Enrollment {
 	private Instant enrolledAt = Instant.now();
 
 	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	@Column(nullable = false)
 	@Builder.Default
 	private EnrollmentStatus status = EnrollmentStatus.ACTIVE;
