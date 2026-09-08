@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Edit user — SkillCraft</title>
+	<th:block th:replace="~{fragments/style :: style}"></th:block>
+</head>
+<body>
+<header class="app-header">
+	<h1>SkillCraft — administration</h1>
+	<form th:action="@{/logout}" method="post">
+		<button type="submit" class="btn-link" style="background:none;color:#6b7280">Sign out</button>
+	</form>
+</header>
+
+<main>
+	<div th:replace="~{fragments/nav :: nav(${tab})}"></div>
+
+	<div class="card">
+		<h2 style="margin-top:0" th:text="${editUser.lastName + ' ' + editUser.firstName}"></h2>
+		<p class="muted" th:text="${editUser.email + ' · ' + editUser.role}"></p>
+
+		<form th:action="@{/admin/users/{id}(id=${editUser.id})}" method="post">
+			<input type="hidden" name="returnTab" th:value="${tab}">
+
+			<label>First name
+				<input type="text" name="firstName" th:value="${editUser.firstName}" required>
+			</label>
+			<label>Last name
+				<input type="text" name="lastName" th:value="${editUser.lastName}" required>
+			</label>
+			<label>Phone
+				<input type="text" name="phone" th:value="${editUser.phone}">
+			</label>
+			<label>
+				<input type="checkbox" name="isActive" value="true" th:checked="${editUser.isActive}" style="width:auto">
+				Active
+			</label>
+
+			<div class="form-actions">
+				<button type="submit">Save</button>
+				<a th:href="@{'/admin/' + ${tab}}" class="muted">Cancel</a>
+			</div>
+		</form>
+	</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Register — SkillCraft</title>
+	<th:block th:replace="~{fragments/style :: style}"></th:block>
+</head>
+<body>
+<div class="auth-box">
+	<h1>Student registration</h1>
+	<p class="muted" style="margin-top:-8px">Teacher and staff accounts are created by an administrator.</p>
+
+	<p class="alert error" th:if="${error}" th:text="${error}"></p>
+
+	<form th:action="@{/register}" th:object="${form}" method="post">
+		<label>First name
+			<input type="text" th:field="*{firstName}" required>
+		</label>
+		<label>Last name
+			<input type="text" th:field="*{lastName}" required>
+		</label>
+		<label>Email
+			<input type="email" th:field="*{email}" required>
+		</label>
+		<label>Password
+			<input type="password" th:field="*{password}" minlength="8" required>
+		</label>
+		<label>Confirm password
+			<input type="password" th:field="*{confirmPassword}" minlength="8" required>
+		</label>
+		<button type="submit" style="width:100%">Register</button>
+	</form>
+
+	<p class="muted" style="text-align:center; margin-top:16px">
+		Already have an account? <a th:href="@{/login}">Sign in</a>
+	</p>
+</div>
+</body>
+</html>

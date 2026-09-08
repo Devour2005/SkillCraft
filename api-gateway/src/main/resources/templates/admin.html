@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Administration — SkillCraft</title>
+	<th:block th:replace="~{fragments/style :: style}"></th:block>
+</head>
+<body>
+<header class="app-header">
+	<h1>SkillCraft — administration</h1>
+	<form th:action="@{/logout}" method="post">
+		<button type="submit" class="btn-link" style="background:none;color:#6b7280">Sign out</button>
+	</form>
+</header>
+
+<main>
+	<div th:replace="~{fragments/nav :: nav(${tab})}"></div>
+
+	<p class="alert error" th:if="${error}" th:text="${error}"></p>
+
+	<section th:if="${tab == 'students' or tab == 'teachers' or tab == 'staff'}">
+		<table>
+			<thead>
+			<tr>
+				<th>Name</th>
+				<th>Email</th>
+				<th>Phone</th>
+				<th>Role</th>
+				<th>Active</th>
+				<th></th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="u : ${users}">
+				<td th:text="${u.lastName + ' ' + u.firstName}"></td>
+				<td th:text="${u.email}"></td>
+				<td th:text="${u.phone ?: '—'}"></td>
+				<td th:text="${u.role}"></td>
+				<td th:text="${u.isActive} ? 'yes' : 'no'"></td>
+				<td><a class="btn" th:href="@{/admin/users/{id}/edit(id=${u.id})}">Edit</a></td>
+			</tr>
+			<tr th:if="${#lists.isEmpty(users)}">
+				<td colspan="6" class="muted">No records</td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section th:if="${tab == 'courses'}">
+		<table>
+			<thead>
+			<tr>
+				<th>Title</th>
+				<th>Teacher</th>
+				<th>Price</th>
+				<th>Archived</th>
+				<th></th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="c : ${courses}">
+				<td th:text="${c.title}"></td>
+				<td th:text="${c.teacherName}"></td>
+				<td th:text="${c.price}"></td>
+				<td th:text="${c.isArchived} ? 'yes' : 'no'"></td>
+				<td><a class="btn" th:href="@{/admin/courses/{id}/edit(id=${c.id})}">Edit</a></td>
+			</tr>
+			<tr th:if="${#lists.isEmpty(courses)}">
+				<td colspan="5" class="muted">No records</td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

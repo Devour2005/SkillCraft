@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Edit course — SkillCraft</title>
+	<th:block th:replace="~{fragments/style :: style}"></th:block>
+</head>
+<body>
+<header class="app-header">
+	<h1>SkillCraft — administration</h1>
+	<form th:action="@{/logout}" method="post">
+		<button type="submit" class="btn-link" style="background:none;color:#6b7280">Sign out</button>
+	</form>
+</header>
+
+<main>
+	<div th:replace="~{fragments/nav :: nav(${tab})}"></div>
+
+	<div class="card">
+		<h2 style="margin-top:0" th:text="${editCourse.title}"></h2>
+
+		<form th:action="@{/admin/courses/{id}(id=${editCourse.id})}" method="post">
+			<label>Title
+				<input type="text" name="title" th:value="${editCourse.title}" required>
+			</label>
+			<label>Description
+				<textarea name="description" rows="3" th:text="${editCourse.description}"></textarea>
+			</label>
+			<label>Teacher
+				<select name="teacherId" required>
+					<option th:each="t : ${teachers}"
+							th:value="${t.id}"
+							th:text="${t.lastName + ' ' + t.firstName}"
+							th:selected="${t.id == editCourse.teacherId}"></option>
+				</select>
+			</label>
+			<label>Price
+				<input type="number" name="price" step="0.01" min="0" th:value="${editCourse.price}" required>
+			</label>
+			<label>
+				<input type="checkbox" name="isArchived" value="true" th:checked="${editCourse.isArchived}" style="width:auto">
+				Archived
+			</label>
+
+			<div class="form-actions">
+				<button type="submit">Save</button>
+				<a th:href="@{/admin/courses}" class="muted">Cancel</a>
+			</div>
+		</form>
+	</div>
+</main>
+</body>
+</html>

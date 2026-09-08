@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Sign in — SkillCraft</title>
+	<th:block th:replace="~{fragments/style :: style}"></th:block>
+</head>
+<body>
+<div class="auth-box">
+	<h1>SkillCraft</h1>
+
+	<p class="alert error" th:if="${param.error}">Invalid email or password</p>
+	<p class="alert success" th:if="${param.logout}">You have been signed out</p>
+	<p class="alert success" th:if="${registered}">Registration successful, please sign in</p>
+
+	<form th:action="@{/login}" method="post">
+		<label>Email
+			<input type="email" name="username" required autofocus>
+		</label>
+		<label>Password
+			<input type="password" name="password" required>
+		</label>
+		<button type="submit" style="width:100%">Sign in</button>
+	</form>
+
+	<p class="muted" style="text-align:center; margin-top:16px">
+		No account yet? <a th:href="@{/register}">Register</a>
+	</p>
+</div>
+</body>
+</html>
