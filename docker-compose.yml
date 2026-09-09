@@ -92,12 +92,16 @@ services:
       POSTGRES_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/skill_craft}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MANAGEMENT_BASE_URL: http://management:8080
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       APP_PORT: 8084
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_started
+      management:
         condition: service_started
     ports:
       - "8084:8084"

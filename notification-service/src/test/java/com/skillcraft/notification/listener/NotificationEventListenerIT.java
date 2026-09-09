@@ -2,6 +2,8 @@ package com.skillcraft.notification.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skillcraft.notification.TestcontainersConfiguration;
+import com.skillcraft.notification.client.ManagementClient;
+import com.skillcraft.notification.client.ManagementUserDto;
 import com.skillcraft.notification.domain.Notification;
 import com.skillcraft.notification.event.EnrollmentCreatedEvent;
 import com.skillcraft.notification.event.KafkaTopics;
@@ -22,30 +24,33 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.kafka.KafkaContainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 
 /**
  * Verifies the consumer side against a real broker and a real database: a
  * plain JSON message on each topic ends up as a Notification row.
  *
- * The test DB only carries this service's own `notification` schema (from
- * its own Flyway migration) - `public.users` is management's table, so it's
- * faked here with the one column (email) this service actually reads.
+ * management (the actual owner of the `users` table this service used to
+ * read directly) isn't part of this test's Testcontainers setup, so the
+ * Feign client that now resolves emails is mocked instead.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
+@TestPropertySource(properties = "jwt.secret=test-only-secret-not-used-outside-the-test-suite-0123456789")
 class NotificationEventListenerIT {
 
 	@Autowired
 	private NotificationRepository notificationRepository;
 
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
+	@MockitoBean
+	private ManagementClient managementClient;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -57,8 +62,6 @@ class NotificationEventListenerIT {
 
 	@BeforeEach
 	void setUp() {
-		jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS public.users (id BIGINT PRIMARY KEY, email VARCHAR(255))");
-
 		Properties props = new Properties();
 		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -86,7 +89,7 @@ class NotificationEventListenerIT {
 	@Test
 	void enrollmentCreatedEvent_resolvesEmailFromUsersTableAndIsPersisted() throws Exception {
 		long userId = System.nanoTime();
-		jdbcTemplate.update("INSERT INTO public.users (id, email) VALUES (?, ?)", userId, "enrolled-student@example.com");
+		when(managementClient.getUser(userId)).thenReturn(new ManagementUserDto(userId, "enrolled-student@example.com"));
 
 		EnrollmentCreatedEvent event = new EnrollmentCreatedEvent(1L, userId, "Dana White", 10L, "Algebra 101",
 				new java.math.BigDecimal("150.00"), Instant.now());
@@ -101,7 +104,7 @@ class NotificationEventListenerIT {
 	@Test
 	void paymentProcessedEvent_resolvesEmailFromUsersTableAndIsPersisted() throws Exception {
 		long userId = System.nanoTime();
-		jdbcTemplate.update("INSERT INTO public.users (id, email) VALUES (?, ?)", userId, "payer@example.com");
+		when(managementClient.getUser(userId)).thenReturn(new ManagementUserDto(userId, "payer@example.com"));
 
 		PaymentProcessedEvent event = new PaymentProcessedEvent(1L, 2L, userId, new java.math.BigDecimal("200.00"),
 				"STUDENT_TUITION", "Tuition", Instant.now());

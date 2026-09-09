@@ -1,11 +1,12 @@
 package com.skillcraft.notification.service;
 
+import com.skillcraft.notification.client.ManagementClient;
 import com.skillcraft.notification.domain.Notification;
 import com.skillcraft.notification.event.EnrollmentCreatedEvent;
 import com.skillcraft.notification.event.PaymentProcessedEvent;
 import com.skillcraft.notification.event.UserRegisteredEvent;
 import com.skillcraft.notification.repository.NotificationRepository;
-import com.skillcraft.notification.repository.UserViewRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
 	private final NotificationRepository notificationRepository;
-	private final UserViewRepository userViewRepository;
+	private final ManagementClient managementClient;
 
 	public void notifyUserRegistered(UserRegisteredEvent event) {
 		String subject = "Welcome to SkillCraft";
@@ -43,7 +44,12 @@ public class NotificationService {
 	}
 
 	private String resolveEmail(Long userId) {
-		return userViewRepository.findById(userId).map(u -> u.getEmail()).orElse(null);
+		try {
+			return managementClient.getUser(userId).email();
+		} catch (FeignException ex) {
+			log.warn("Could not resolve email for user {} from management: {}", userId, ex.getMessage());
+			return null;
+		}
 	}
 
 	private void send(Long recipientUserId, String recipientEmail, String eventType, String subject, String body) {
