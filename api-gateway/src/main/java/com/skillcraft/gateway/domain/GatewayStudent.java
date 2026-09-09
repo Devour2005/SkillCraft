@@ -14,11 +14,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Mirrors com.skillcraft.domain.Student in management, only for the write
- * self-registration needs to perform. See GatewayUser for why this is
- * duplicated rather than shared.
- */
 @Entity
 @Table(name = "students")
 @Getter

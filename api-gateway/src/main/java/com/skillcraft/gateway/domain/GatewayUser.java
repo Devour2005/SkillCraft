@@ -16,11 +16,6 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/**
- * Read-mostly view of the shared `users` table, just enough to authenticate.
- * Management owns the full entity (profile fields, relations, etc.) and is
- * the only service allowed to create/update rows here beyond password resets.
- */
 @Entity
 @Table(name = "users")
 @Getter

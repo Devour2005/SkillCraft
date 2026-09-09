@@ -8,10 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Debug-only visibility into issued invoices. Not routed through
- * api-gateway yet and has no auth of its own - internal use only.
- */
 @RestController
 @RequiredArgsConstructor
 public class InvoiceController {
