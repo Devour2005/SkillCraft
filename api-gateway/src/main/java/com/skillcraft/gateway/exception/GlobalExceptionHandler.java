@@ -1,5 +1,6 @@
 package com.skillcraft.gateway.exception;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,5 +28,11 @@ public class GlobalExceptionHandler {
 				.map(error -> error.getField() + ": " + error.getDefaultMessage())
 				.collect(Collectors.joining("; "));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(message));
+	}
+
+	@ExceptionHandler(CallNotPermittedException.class)
+	public ResponseEntity<ApiError> handleCircuitOpen(CallNotPermittedException ex) {
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(new ApiError("management service temporarily unavailable (circuit open)"));
 	}
 }

@@ -27,6 +27,15 @@ jwt:
 app:
   management-service:
     base-url: ${MANAGEMENT_BASE_URL:http://management:8080}
+  resilience:
+    circuit-breaker:
+      sliding-window-size: 20
+      minimum-calls: 10
+      failure-rate-threshold: 50
+      open-state-wait-seconds: 15
+    retry:
+      max-attempts: 3
+      wait-millis: 200
 
 logging:
   level:

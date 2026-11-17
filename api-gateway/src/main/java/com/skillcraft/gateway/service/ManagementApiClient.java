@@ -28,72 +28,73 @@ public class ManagementApiClient {
 	private final RestClient managementRestClient;
 	private final GatewayUserRepository userRepository;
 	private final JwtService jwtService;
+	private final ManagementCaller caller;
 
 	public List<AdminUserView> getUsersByRoles(Authentication authentication, List<UserRole> roles) {
 		Object[] roleNames = roles.stream().map(Enum::name).toArray();
-		return managementRestClient.get()
+		return caller.idempotent(() -> managementRestClient.get()
 				.uri(uriBuilder -> uriBuilder.path("/api/users").queryParam("role", roleNames).build())
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.body(new ParameterizedTypeReference<List<AdminUserView>>() {});
+				.body(new ParameterizedTypeReference<List<AdminUserView>>() {}));
 	}
 
 	public AdminUserView getUser(Authentication authentication, Long id) {
-		return managementRestClient.get()
+		return caller.idempotent(() -> managementRestClient.get()
 				.uri("/api/users/{id}", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.body(AdminUserView.class);
+				.body(AdminUserView.class));
 	}
 
 	public AdminUserView updateUser(Authentication authentication, Long id, AdminUpdateUserRequest request) {
-		return managementRestClient.put()
+		return caller.safe(() -> managementRestClient.put()
 				.uri("/api/users/{id}", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.body(request)
 				.retrieve()
-				.body(AdminUserView.class);
+				.body(AdminUserView.class));
 	}
 
 	public void deactivateUser(Authentication authentication, Long id) {
-		managementRestClient.post()
+		caller.safeRun(() -> managementRestClient.post()
 				.uri("/api/users/{id}/deactivate", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.toBodilessEntity();
+				.toBodilessEntity());
 	}
 
 	public void deleteUser(Authentication authentication, Long id) {
-		managementRestClient.delete()
+		caller.safeRun(() -> managementRestClient.delete()
 				.uri("/api/users/{id}", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.toBodilessEntity();
+				.toBodilessEntity());
 	}
 
 	public List<AdminCourseView> getAllCourses(Authentication authentication) {
-		return managementRestClient.get()
+		return caller.idempotent(() -> managementRestClient.get()
 				.uri("/api/courses/all")
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.body(new ParameterizedTypeReference<List<AdminCourseView>>() {});
+				.body(new ParameterizedTypeReference<List<AdminCourseView>>() {}));
 	}
 
 	public AdminCourseView getCourse(Authentication authentication, Long id) {
-		return managementRestClient.get()
+		return caller.idempotent(() -> managementRestClient.get()
 				.uri("/api/courses/{id}", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.retrieve()
-				.body(AdminCourseView.class);
+				.body(AdminCourseView.class));
 	}
 
 	public AdminCourseView updateCourse(Authentication authentication, Long id, AdminUpdateCourseRequest request) {
-		return managementRestClient.put()
+		return caller.safe(() -> managementRestClient.put()
 				.uri("/api/courses/{id}", id)
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))
 				.body(request)
 				.retrieve()
-				.body(AdminCourseView.class);
+				.body(AdminCourseView.class));
 	}
 
 	private String bearer(Authentication authentication) {
