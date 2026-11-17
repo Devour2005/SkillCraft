@@ -1,5 +1,7 @@
 package com.skillcraft.gateway.security;
 
+import com.skillcraft.util.collection_utils.CollectionsUtil;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,9 +25,9 @@ public class AdminPanelAuthenticationSuccessHandler implements AuthenticationSuc
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 			Authentication authentication) throws IOException, ServletException {
-		boolean canAccessAdminPanel = authentication.getAuthorities().stream()
-				.map(GrantedAuthority::getAuthority)
-				.anyMatch(authority -> authority.equals("ROLE_ADMIN") || authority.equals("ROLE_MANAGER"));
+		boolean canAccessAdminPanel = CollectionsUtil.anyMatch(
+				ListsUtil.map(authentication.getAuthorities(), GrantedAuthority::getAuthority),
+				authority -> authority.equals("ROLE_ADMIN") || authority.equals("ROLE_MANAGER"));
 
 		if (canAccessAdminPanel) {
 			response.sendRedirect(request.getContextPath() + "/admin");

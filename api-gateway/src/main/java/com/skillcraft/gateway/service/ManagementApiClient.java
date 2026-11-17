@@ -8,6 +8,7 @@ import com.skillcraft.gateway.dto.AdminUpdateUserRequest;
 import com.skillcraft.gateway.dto.AdminUserView;
 import com.skillcraft.gateway.repository.GatewayUserRepository;
 import com.skillcraft.gateway.security.JwtService;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -31,7 +32,7 @@ public class ManagementApiClient {
 	private final ManagementCaller caller;
 
 	public List<AdminUserView> getUsersByRoles(Authentication authentication, List<UserRole> roles) {
-		Object[] roleNames = roles.stream().map(Enum::name).toArray();
+		Object[] roleNames = ListsUtil.map(roles, Enum::name).toArray();
 		return caller.idempotent(() -> managementRestClient.get()
 				.uri(uriBuilder -> uriBuilder.path("/api/users").queryParam("role", roleNames).build())
 				.header(HttpHeaders.AUTHORIZATION, bearer(authentication))

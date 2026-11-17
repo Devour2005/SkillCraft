@@ -12,6 +12,7 @@ import com.skillcraft.repository.CourseRepository;
 import com.skillcraft.repository.EnrollmentRepository;
 import com.skillcraft.repository.StudentRepository;
 import com.skillcraft.service.EnrollmentService;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,9 +66,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 		Student student = studentRepository.findByUserId(studentUserId)
 				.orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
-		return enrollmentRepository.findAllByStudentId(student.getId())
-				.stream()
-				.map(enrollmentMapper::toDto)
-				.toList();
+		return ListsUtil.map(enrollmentRepository.findAllByStudentId(student.getId()), enrollmentMapper::toDto);
 	}
 }

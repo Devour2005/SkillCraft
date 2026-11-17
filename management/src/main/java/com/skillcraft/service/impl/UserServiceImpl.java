@@ -17,6 +17,7 @@ import com.skillcraft.repository.StaffProfileRepository;
 import com.skillcraft.repository.StudentRepository;
 import com.skillcraft.repository.UserRepository;
 import com.skillcraft.service.UserService;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Instant;
 import java.util.Collection;
@@ -79,10 +80,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UserDto> getUsersByRoles(Collection<UserRole> roles) {
-		return userRepository.findAllByRoleInOrderByLastNameAscFirstNameAsc(roles)
-				.stream()
-				.map(userMapper::toDto)
-				.toList();
+		return ListsUtil.map(userRepository.findAllByRoleInOrderByLastNameAscFirstNameAsc(roles), userMapper::toDto);
 	}
 
 	@Override

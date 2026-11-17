@@ -10,6 +10,7 @@ import com.skillcraft.domain.mapper.CourseMapper;
 import com.skillcraft.repository.CourseRepository;
 import com.skillcraft.repository.UserRepository;
 import com.skillcraft.service.CourseService;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -53,10 +54,7 @@ public class CourseServiceImpl implements CourseService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<CourseDto> getAllCourses() {
-		return courseRepository.findAll()
-				.stream()
-				.map(courseMapper::toDto)
-				.toList();
+		return ListsUtil.map(courseRepository.findAll(), courseMapper::toDto);
 	}
 
 	@Override

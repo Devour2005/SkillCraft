@@ -1,7 +1,7 @@
 package com.skillcraft.exception;
 
 import jakarta.persistence.EntityNotFoundException;
-import java.util.stream.Collectors;
+import com.skillcraft.util.collection_utils.ListsUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,9 +35,8 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
-		String message = ex.getBindingResult().getFieldErrors().stream()
-				.map(error -> error.getField() + ": " + error.getDefaultMessage())
-				.collect(Collectors.joining("; "));
+		String message = String.join("; ", ListsUtil.map(ex.getBindingResult().getFieldErrors(),
+				error -> error.getField() + ": " + error.getDefaultMessage()));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(message));
 	}
 }
