@@ -6,7 +6,9 @@ COPY management/build.gradle management/build.gradle
 COPY api-gateway/build.gradle api-gateway/build.gradle
 COPY notification-service/build.gradle notification-service/build.gradle
 COPY billing-service/build.gradle billing-service/build.gradle
+COPY common/build.gradle common/build.gradle
 RUN chmod +x gradlew
+COPY common/src common/src
 COPY billing-service/src billing-service/src
 RUN ./gradlew :billing-service:bootJar --no-daemon -x test
 
